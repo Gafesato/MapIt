@@ -1,6 +1,15 @@
 # MapIt
 Interfaz en Tkinter&amp;Python para permitirle al estudiante crear relaciones significativas entre los temas que está aprendiendo. 
 
+
+
+
+
+
+
+
+
+
 ### Guía para usar el ejecutable
 c:\users\samue\appdata\local\programs\python\python310\lib\site-packages
 
