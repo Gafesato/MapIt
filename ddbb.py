@@ -21,7 +21,8 @@ def createDB():
         importancia TEXT,
         grupo_grafo TEXT,
         conexiones TEXT UNIQUE,
-        label TEXT
+        label TEXT,
+        tipo_relacion TEXT
         )""")
     con.close()
 
@@ -59,11 +60,14 @@ def getTopicList():
 
     total_busqueda_temas = cursor.execute("SELECT COUNT(temas) FROM grafo")
     total_temas = total_busqueda_temas.fetchone()[0]
+
+    lista_temas_relate_window_busqueda = cursor.execute("SELECT temas FROM grafo WHERE conexiones IS NULL")
+    lista_temas_relate_window = [x[0] for x in lista_temas_relate_window_busqueda.fetchall()]
     con.close()
 
     # Verificar si hay temas
     if lista_temas:
-        return [lista_temas, total_temas]
+        return [lista_temas, total_temas, lista_temas_relate_window]
     else:
         return [None, None]
 
@@ -125,14 +129,16 @@ def updateTopic(antiguo_tema, nuevo_tema):
     con.close()
 
 
-def addIdeaRelevance(reltype_entry, label_entry):
+def addIdeaRelevance(reltype_entry, label_entry, topic1, topic1_to_rel):
     """Añade el tipo de relación y la idea a la DB."""
 
     status = False
     try:
-        params = (label_entry.get(), reltype_entry.get())
+        type_con = f'({topic1}-{topic1_to_rel})'
+        params = (label_entry.get(), type_con, reltype_entry.get(), topic1)
         cursor, con = openDB('db/temas1.db')
-        cursor.execute('INSERT INTO grafo (conexiones, label, tipconexion) VALUES (?, ?)', params)
+        #cursor.execute('UPDATE grafo SET label = ?, conexiones = ?, tipo_relacion = ? WHERE temas = ?', params)
+        cursor.execute('UPDATE grafo SET label = ?, conexiones = ?, grupo_grafo = ? WHERE temas = ?', params)
         con.commit()
         con.close()
         status = True
@@ -153,4 +159,3 @@ def deleteTopic(tema_eliminar):
     
     con.close()
     return status
-

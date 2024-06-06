@@ -4,6 +4,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import networkx as nx
 import matplotlib.pyplot as plt
 from modules.manage import relevance_up_to_date
+from ddbb import getTopicList
 
 
 class RelateWindow(CTkFrame):
@@ -32,34 +33,40 @@ class RelateWindow(CTkFrame):
         self.rel_cont.grid_columnconfigure((0,1,2,3), weight=1, uniform='a')
         
         if relevance_up_to_date():
+            # Si la relevancia está al día se pueden hacer las conexiones
             self.main_button.configure(state='normal')
             self.status_message.configure(text='Está al día. Puede relacionar!')
-            self.main_button.configure(command=self.create_connections)
-            # Si está al la relevancia se pueden hacer las conexiones
-
+            self.main_button.configure(command=lambda: self.create_connections(first=True))
         else:
             # De lo contrario, el botón está desactivado
             self.main_button.configure(state='disabled')
             self.status_message.configure(text='Tiene temas por relacionar todavía!')
 
-
-    def create_connections(self):
-        self.main_button.grid_forget()
-        self.status_message.grid_remove()
-        self.preview_cont.grid(row=0, column=0, sticky='news')
-        self.rel_cont.grid(row=1, column=0, sticky='news')
+        # Obtener la lista de temas que se van a pasar por el proceso del mini grafo
+        self.CONTADOR = 0
+        self.topic_list = getTopicList()[2]
 
 
-        self.status_message = CTkLabel(self.rel_cont, fg_color='#f56')
-        self.status_message.grid(row=5, column=0, columnspan=4, sticky='news')
+    def create_connections(self, first=False):
+        if first:
+            self.main_button.grid_forget()
+            self.status_message.grid_remove()
+            self.preview_cont.grid(row=0, column=0, sticky='news')
+            self.rel_cont.grid(row=1, column=0, sticky='news')
 
-        title_topics = CTkLabel(self.rel_cont, text='¿Cómo se relacionan los temas 1111111111 y 222222222222?', wraplength=300)
+            self.status_message = CTkLabel(self.rel_cont, fg_color='#f56')
+            self.status_message.grid(row=5, column=0, columnspan=4, sticky='news')
+
+        topic1, topic2 = self.topic_list[self.CONTADOR], self.topic_list[self.CONTADOR+1]
+        title_topics = CTkLabel(self.rel_cont, text=f'¿Cómo se relacionan los temas {topic1} y {topic2}?', wraplength=300)
         reltype_entry = CTkEntry(self.rel_cont, placeholder_text='Tipo de relación')
         label_entry = CTkEntry(self.rel_cont, placeholder_text='Label')
 
+        # Estos datos de aquí se deben obtener desde la DB
+        option_menu_topic1 = 'relevante'
+        option_menu_topic2 = 'detalle'
+        # ---------------------------------------------------
 
-        topic1, option_menu_topic1 = 'Hurra', 'relevante'
-        topic2, option_menu_topic2 = 'Hurra2', 'detalle'
         send_info_btn = CTkButton(self.rel_cont, text='Enviar Info', fg_color='#456',
                                 command=lambda: self.verify_input(label_entry, reltype_entry, option_menu_topic1, option_menu_topic2, topic1, topic2))
     
@@ -84,13 +91,9 @@ Sin relación (sr)
 
 
         # Agregar a la DB la relacion, label, relevancia
-        accept_graph_btn = CTkButton(self.preview_cont, text='¿Aceptar Previsualización?', command=lambda: self.accept_graph_funct(reltype_entry, label_entry, topic1, topic2))
+        accept_graph_btn = CTkButton(self.preview_cont, text='¿Aceptar Previsualización?', command=lambda: self.accept_graph_funct(reltype_entry, label_entry, topic1, topic2, self.topic_list, self.CONTADOR))
         accept_graph_btn.grid(row=4, column=0, columnspan=2)
 
-
-        # Iteradores para seleccionar los temas a mostrar -> relacionar
-        self.fti = 0 # First Topic Iterator
-        self.sti = 1 # Second Topic Iterator
 
 
     def verify_input(self, label_entry, reltype_entry, option_menu_topic1, option_menu_topic2, topic1, topic2):
@@ -101,7 +104,7 @@ Sin relación (sr)
         elif reltype_entry.get() not in ['cs', 'er', 'c', 'sr']:
             self.status_message.configure(text='Agregue una relación válida')
         elif reltype_entry.get() and label_entry.get():
-            self.status_message.configure(text='Enviando información con éxito...')
+            self.status_message.configure(text='Mostrando relación con éxito...')
             self.relation_preview(label_entry, reltype_entry, option_menu_topic1, option_menu_topic2, topic1, topic2)
 
 
@@ -144,33 +147,16 @@ Sin relación (sr)
         canvas.draw()
 
 
-
-        #topic1 = db_topics[self.fti]
-        #topic2 = db_topics[self.sti]
-
-        
-
-
-        #topic1_title.configure(text=f'{topic1}')
-        #topic2_title.configure(text=f'{topic2}')
-
-    
-
-    def accept_graph_funct(self, reltype_entry, label_entry, topic1, topic1_to_rel):
+    def accept_graph_funct(self, reltype_entry, label_entry, topic1, topic1_to_rel, topic_list, CONTADOR):
         """Agrega los nuevos valores a la DB."""
 
         if addIdeaRelevance(reltype_entry, label_entry, topic1, topic1_to_rel):
-            s = 'Añadida la idea y la conexión con éxito.'
-            pass
-            # Como se le ha dado enviar al botón, ahora cambia los temas a preguntar por la relacion
+            self.status_message.configure(text='Añadida la idea y la conexión con éxito.')
+            if CONTADOR + 2 <= len(topic_list):
+                # Como se le ha dado enviar al botón, ahora cambia los temas a preguntar por la relacion
+                CONTADOR += 1
+                return RelateWindow.create_connections()
+            else:
+                self.status_message.configure(text='Ha terminado de relacionar!')
         else:
-            s = 'Error al añadir a la base de Datos'
-        self.status_message.configure(text=s)
-
-        """
-        if self.sti < TOTAL_TOPIC_COUNT:
-            self.sti += 1
-        if self.sti == TOTAL_TOPIC_COUNT:
-            self.fti += 1
-            self.sti = self.fti + 1
-        """
+            self.status_message.configure(text='Error al añadir a la base de Datos')
