@@ -1,12 +1,15 @@
 from customtkinter import CTk, CTkFrame, CTkButton, CTkLabel, CTkOptionMenu, CTkEntry, CTkInputDialog, CTkTextbox, CTkSlider
 import tkinter as tk
-from ddbb import getTopicList, createDB, addTopic, checkTopic, deleteTopic, updateTopic, addIdea, check_user_db, openDB, addIdeaRelevance
+from ddbb import getTopicList, addTopic, checkTopic, deleteTopic, updateTopic, addIdea, openDB, addIdeaRelevance
 #from modules.functions import db_total_rel_topics, update_root_screen, relevance_status, db_topics, db_total_topics
 
 db_topics, db_total_topics = None, None
 db_total_rel_topics = int
 
 relevance_status = False
+
+color = ('#11001C', '#F6C0D0')
+color2 = ('#fff', '#11001C')
 
 def update_root_screen(process=1, relevance_status=False):
     global db_topics
@@ -100,7 +103,7 @@ acuerdo a su preferencia.
 se recomienda RELACIONAR los temas.
                                              
 ''')
-        self.start_relevance_btn = CTkButton(self.info_cont, text='Empezar relevancia', 
+        self.start_relevance_btn = CTkButton(self.info_cont, text='Empezar relevancia', text_color=color, fg_color=color2,
                                              state='disabled', corner_radius=20, command=lambda: self.add_relevance_funct(delete_flag=True))
         self.introduction_message2 = CTkLabel(self.info_cont, text='''
 1. Deben haber más de 5 temas para 
@@ -125,7 +128,7 @@ tipo de relevancia es para cada tema.
         self.start_option_menu = CTkOptionMenu(self.info_cont, corner_radius=20,
                             values=['relevante','detalle'], anchor='center')
         self.start_option_menu.set('')
-        self.start_idea_entry = CTkTextbox(self.info_cont, corner_radius=20)
+        self.start_idea_entry = CTkTextbox(self.info_cont, corner_radius=20, fg_color=color2)
         self.start_send_info = CTkButton(self.info_cont, text='Enviar Información', command=self.relevance_send_funct)
         
         self.topic_setup(update_flag=True)
@@ -169,7 +172,6 @@ tipo de relevancia es para cada tema.
             self.start_idea_entry.grid_remove()
             self.start_send_info.grid_remove()
             self.start_send_info.grid_remove()
-
 
 
     def relevance_send_funct(self, first=False):
@@ -223,10 +225,6 @@ tipo de relevancia es para cada tema.
             self.rel_topic_iterator = 0
             self.rel_topic_decrement_iterator = 0
             self.after(3000, lambda: self.add_relevance_funct(delete_flag2=True))
-
-            
-
-        
 
 
     def topic_setup(self, update_flag=False):
@@ -285,7 +283,6 @@ tipo de relevancia es para cada tema.
         self.status_message.configure(text=s)
 
 
-
     def topic_delete_funct(self):
         """Elimina del listbox y la db el tema."""
 
@@ -304,7 +301,6 @@ tipo de relevancia es para cada tema.
         except IndexError:
             s = "Seleccione un tema para eliminar!"
         self.status_message.configure(text=s)
-        
 
 
     def topic_update_funct(event, self):
@@ -330,22 +326,8 @@ tipo de relevancia es para cada tema.
             s = 'Agregue un tema!'
 
         self.status_message.configure(text=s)
-        
-
-        
-
-    
 
     """
-    
-        
-        
-
-
-    
-
-
-
     def get_topic_count(self, update_flag=False):
         ""Actualiza el root y la cuenta sobre el total de temas.""
 

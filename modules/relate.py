@@ -1,3 +1,11 @@
+from customtkinter import CTkFrame, CTkButton, CTkLabel, CTkEntry
+from ddbb import addIdeaRelevance
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import networkx as nx
+import matplotlib.pyplot as plt
+from modules.manage import relevance_up_to_date
+
+
 class RelateWindow(CTkFrame):
     def __init__(self, master):
         super().__init__(master)
@@ -159,9 +167,10 @@ Sin relación (sr)
             s = 'Error al añadir a la base de Datos'
         self.status_message.configure(text=s)
 
-
+        """
         if self.sti < TOTAL_TOPIC_COUNT:
             self.sti += 1
         if self.sti == TOTAL_TOPIC_COUNT:
             self.fti += 1
             self.sti = self.fti + 1
+        """

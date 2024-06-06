@@ -1,6 +1,7 @@
 from customtkinter import CTk, CTkFrame, CTkButton, CTkLabel
 from modules.settings import SettingsWindow
 from modules.manage import ManageWindow
+from modules.relate import RelateWindow
 
 color = ('#11001C', '#F6C0D0')
 color2 = ('#fff', '#11001C')
@@ -72,6 +73,6 @@ class App(CTk):
         if option == "main": frame = MainWindow(self)
         if option == 'manage': frame = ManageWindow(self)
         if option == 'visualize': frame = MainWindow(self)
-        if option == 'relate': frame = MainWindow(self)
+        if option == 'relate': frame = RelateWindow(self)
         if option == 'settings': frame = SettingsWindow(self)
         frame.place(relx=0.2, y=0, relwidth=0.8, relheight=1)

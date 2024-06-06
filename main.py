@@ -1,10 +1,4 @@
-from customtkinter import CTk, CTkFrame, CTkButton, CTkLabel, CTkOptionMenu, CTkEntry, CTkInputDialog, CTkTextbox, CTkSlider
-import tkinter as tk
 import customtkinter as c
-from ddbb import getTopicList, createDB, addTopic, checkTopic, deleteTopic, updateTopic, addIdea, check_user_db, openDB, addIdeaRelevance
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import networkx as nx
-import matplotlib.pyplot as plt
 
 from ddbb import createDB, check_user_db
 from modules.window import App
