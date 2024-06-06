@@ -1,7 +1,42 @@
 from customtkinter import CTk, CTkFrame, CTkButton, CTkLabel, CTkOptionMenu, CTkEntry, CTkInputDialog, CTkTextbox, CTkSlider
 import tkinter as tk
 from ddbb import getTopicList, createDB, addTopic, checkTopic, deleteTopic, updateTopic, addIdea, check_user_db, openDB, addIdeaRelevance
-from modules.functions import db_total_rel_topics, update_root_screen, relevance_status, db_topics, db_total_topics
+#from modules.functions import db_total_rel_topics, update_root_screen, relevance_status, db_topics, db_total_topics
+
+db_topics, db_total_topics = None, None
+db_total_rel_topics = int
+
+relevance_status = False
+
+def update_root_screen(process=1, relevance_status=False):
+    global db_topics
+    global db_total_topics
+    global db_total_rel_topics
+
+    db_topics, db_total_topics = getTopicList()
+    if process == 1:
+        try:
+            if db_total_topics > 5:
+                db_total_rel_topics = 6
+            else:
+                db_total_rel_topics = db_total_topics
+        except TypeError:
+            pass
+    
+    
+
+
+def relevance_up_to_date():
+    # Especificar relevancia al día
+    try:
+        cursor, con = openDB('db/user.db')
+        cursor.execute('UPDATE user_info SET relevancia = ? WHERE id = ?', (relevance_status, 1,))
+        con.commit()
+        con.close()
+        return True
+    except Exception:
+        return False
+
 
 class ManageWindow(CTkFrame):
     """Página con gestión de temas."""
@@ -83,7 +118,6 @@ tipo de relevancia es para cada tema.
     
 
         #! LADO DERECHO: Elementos del paso 2
-
         update_root_screen()
         self.start_relevance_title = CTkLabel(self.info_cont, text=f'Total de temas: {db_total_topics}')
         self.start_relevance_count = CTkLabel(self.info_cont, text=f'Quedan {db_total_rel_topics} temas relevantes')
@@ -94,16 +128,14 @@ tipo de relevancia es para cada tema.
         self.start_idea_entry = CTkTextbox(self.info_cont, corner_radius=20)
         self.start_send_info = CTkButton(self.info_cont, text='Enviar Información', command=self.relevance_send_funct)
         
-
+        self.topic_setup(update_flag=True)
+        self.rel_topic_iterator = 0
+        self.rel_topic_decrement_iterator = 1
+        
         #self.add_idea_message = CTkLabel(self.topics_cont, text='Presione enter para guardar la idea | Edite sobre el texto para guardar', wraplength=150)
         #delete_funct = lambda: self.topic_detele_funct(self.topic_delete_entry, self.topic_list, self.status_message)
 
         
-
-        self.topic_setup(update_flag=True)
-        self.rel_topic_iterator = 0
-        self.rel_topic_decrement_iterator = 1
-
 
     def add_relevance_funct(self, delete_flag=False, delete_flag2=False):
         """Itera sobre los temas que no tienen relevancia y pregunta sobre ellos."""

@@ -70,8 +70,8 @@ class App(CTk):
         # Cada vez que se llama volver a crear las instancias de los Frames
 
         if option == "main": frame = MainWindow(self)
+        if option == 'manage': frame = ManageWindow(self)
         if option == 'visualize': frame = MainWindow(self)
-        if option == 'manage': frame = MainWindow(self)
         if option == 'relate': frame = MainWindow(self)
         if option == 'settings': frame = SettingsWindow(self)
         frame.place(relx=0.2, y=0, relwidth=0.8, relheight=1)
