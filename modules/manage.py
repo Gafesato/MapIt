@@ -16,7 +16,10 @@ def update_root_screen(process=1, relevance_status=False):
     global db_total_topics
     global db_total_rel_topics
 
-    db_topics, db_total_topics, _ = getTopicList()
+    try:
+        db_topics, db_total_topics, _ = getTopicList()
+    except ValueError:
+        return False
     if process == 1:
         try:
             if db_total_topics > 5:
@@ -27,8 +30,6 @@ def update_root_screen(process=1, relevance_status=False):
             pass
     
     
-
-
 def relevance_up_to_date():
     # Especificar relevancia al día
     try:

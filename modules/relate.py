@@ -44,10 +44,13 @@ class RelateWindow(CTkFrame):
 
         # Obtener la lista de temas que se van a pasar por el proceso del mini grafo
         self.CONTADOR = 0
-        self.topic_list = getTopicList()[2]
+        try:
+            self.topic_list = getTopicList()[2]
+        except IndexError:
+            self.status_message.configure(text='No tiene temas todavía!')
 
 
-    def create_connections(self, first=False):
+    def create_connections(self, first=False, success=False):
         if first:
             self.main_button.grid_forget()
             self.status_message.grid_remove()
@@ -56,43 +59,48 @@ class RelateWindow(CTkFrame):
 
             self.status_message = CTkLabel(self.rel_cont, fg_color='#f56')
             self.status_message.grid(row=5, column=0, columnspan=4, sticky='news')
+        if success:
+            self.status_message.configure(text='')
 
-        topic1, topic2 = self.topic_list[self.CONTADOR], self.topic_list[self.CONTADOR+1]
-        title_topics = CTkLabel(self.rel_cont, text=f'¿Cómo se relacionan los temas {topic1} y {topic2}?', wraplength=300)
-        reltype_entry = CTkEntry(self.rel_cont, placeholder_text='Tipo de relación')
-        label_entry = CTkEntry(self.rel_cont, placeholder_text='Label')
+        try:
+            topic1, topic2 = self.topic_list[self.CONTADOR], self.topic_list[self.CONTADOR+1]
+            title_topics = CTkLabel(self.rel_cont, text=f'¿Cómo se relacionan los temas {topic1} y {topic2}?', wraplength=300)
+            reltype_entry = CTkEntry(self.rel_cont, placeholder_text='Tipo de relación')
+            label_entry = CTkEntry(self.rel_cont, placeholder_text='Label')
 
-        # Estos datos de aquí se deben obtener desde la DB
-        option_menu_topic1 = 'relevante'
-        option_menu_topic2 = 'detalle'
-        # ---------------------------------------------------
+            # Estos datos de aquí se deben obtener desde la DB
+            option_menu_topic1 = 'relevante'
+            option_menu_topic2 = 'detalle'
+            # ---------------------------------------------------
 
-        send_info_btn = CTkButton(self.rel_cont, text='Enviar Info', fg_color='#456',
-                                command=lambda: self.verify_input(label_entry, reltype_entry, option_menu_topic1, option_menu_topic2, topic1, topic2))
-    
-        question_option = CTkLabel(self.rel_cont, 
-                                    text='''
-Las relaciones disponibles son:
-Causal (c) | Consecuencia (cs)
-Estrechamente relacionadas (er)
-Sin relación (sr)
-        ''')
-    
-        title_topics.grid(row=0, column=0, columnspan=2, rowspan=3, sticky='news')
-        reltype_entry.grid(row=3, column=0, sticky='we', padx=(10,5))
-        label_entry.grid(row=3, column=1, sticky='we', padx=(5,10))
-        send_info_btn.grid(row=4, column=0, columnspan=2, sticky='we', padx=20)
-        question_option.grid(row=0, rowspan=5, column=2, columnspan=2, sticky='news')
+            send_info_btn = CTkButton(self.rel_cont, text='Enviar Info', fg_color='#456',
+                                    command=lambda: self.verify_input(label_entry, reltype_entry, option_menu_topic1, option_menu_topic2, topic1, topic2))
+        
+            question_option = CTkLabel(self.rel_cont, 
+                                        text='''
+    Las relaciones disponibles son:
+    Causal (c) | Consecuencia (cs)
+    Estrechamente relacionadas (er)
+    Sin relación (sr)
+            ''')
+        
+            title_topics.grid(row=0, column=0, columnspan=2, rowspan=3, sticky='news')
+            reltype_entry.grid(row=3, column=0, sticky='we', padx=(10,5))
+            label_entry.grid(row=3, column=1, sticky='we', padx=(5,10))
+            send_info_btn.grid(row=4, column=0, columnspan=2, sticky='we', padx=20)
+            question_option.grid(row=0, rowspan=5, column=2, columnspan=2, sticky='news')
 
-        rel_title = CTkLabel(self.preview_cont, text='Vista Previa de la Relación', fg_color='#045', pady=10)
-        box = CTkFrame(self.preview_cont, fg_color='yellow',)
-        rel_title.grid(row=0, column=0, columnspan=2, sticky='news')
-        box.grid(row=1, rowspan=3, column=0, columnspan=2, sticky='news')
+            rel_title = CTkLabel(self.preview_cont, text='Vista Previa de la Relación', fg_color='#045', pady=10)
+            box = CTkFrame(self.preview_cont, fg_color='yellow',)
+            rel_title.grid(row=0, column=0, columnspan=2, sticky='news')
+            box.grid(row=1, rowspan=3, column=0, columnspan=2, sticky='news')
 
 
-        # Agregar a la DB la relacion, label, relevancia
-        accept_graph_btn = CTkButton(self.preview_cont, text='¿Aceptar Previsualización?', command=lambda: self.accept_graph_funct(reltype_entry, label_entry, topic1, topic2, self.topic_list, self.CONTADOR))
-        accept_graph_btn.grid(row=4, column=0, columnspan=2)
+            # Agregar a la DB la relacion, label, relevancia
+            accept_graph_btn = CTkButton(self.preview_cont, text='¿Aceptar Previsualización?', command=lambda: self.accept_graph_funct(reltype_entry, label_entry, topic1, topic2, self.topic_list, self.CONTADOR))
+            accept_graph_btn.grid(row=4, column=0, columnspan=2)
+        except IndexError:
+            self.status_message.configure(text='¡Conexiones realizadas con éxito!')
 
 
 
@@ -151,12 +159,15 @@ Sin relación (sr)
         """Agrega los nuevos valores a la DB."""
 
         if addIdeaRelevance(reltype_entry, label_entry, topic1, topic1_to_rel):
-            self.status_message.configure(text='Añadida la idea y la conexión con éxito.')
             if CONTADOR + 2 <= len(topic_list):
                 # Como se le ha dado enviar al botón, ahora cambia los temas a preguntar por la relacion
-                CONTADOR += 1
-                return RelateWindow.create_connections()
+                self.CONTADOR += 1
+                self.status_message.configure(text='Añadida la idea y la conexión con éxito.')
+                return self.create_connections(self)
             else:
-                self.status_message.configure(text='Ha terminado de relacionar!')
+                self.preview_cont.destroy()
+                self.rel_cont.destroy()
+                #CTkLabel("Ahora puede visualizar el grafo").pack(fill='both', expand=True)
+
         else:
             self.status_message.configure(text='Error al añadir a la base de Datos')
