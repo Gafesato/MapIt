@@ -1,7 +1,7 @@
 import customtkinter as c
-
-from ddbb import createDB, check_user_db
 from modules.window import App
+import json
+
 
 color = ('#11001C', '#F6C0D0')
 color2 = ('#fff', '#11001C')
@@ -11,8 +11,6 @@ def main():
     """Función principal que contiene toda la lógica del programa."""
 
     # Creación de bases de datos
-    createDB()
-    check_user_db()
 
     # Configuración de la ventana customtkinter
     c.deactivate_automatic_dpi_awareness()

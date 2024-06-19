@@ -1,0 +1,24 @@
+{
+    "users": [
+        {
+            "username": "jane_doe",
+            "email": "jane@example.com"
+        },
+        {
+            "username": "john_doe",
+            "email": "john@example.com"
+        },
+        {
+            "username": "jane_doe",
+            "email": "jane@example.com"
+        }
+    ],
+    "subjects": {
+        "Fundamentos": [],
+        "Calculo": [],
+        "Trading": [],
+        "CC": [],
+        "Productividad": [],
+        "Familia": []
+    }
+}

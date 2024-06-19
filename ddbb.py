@@ -8,6 +8,13 @@ def openDB(db):
     cursor = con.cursor()
     return cursor, con
 
+def createSubjectDB():
+    cursor, con = openDB('db/user.db')
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS materias (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        materia TEXT UNIQUE NOT NULL)""")
+    con.close()
 
 def createDB():
     """Función de un único uso."""
@@ -134,7 +141,7 @@ def addIdeaRelevance(reltype_entry, label_entry, topic1, topic1_to_rel):
 
     status = False
     try:
-        type_con = f'({topic1}-{topic1_to_rel})'
+        type_con = f'{topic1_to_rel},'
         params = (label_entry.get(), type_con, reltype_entry.get(), topic1)
         cursor, con = openDB('db/temas1.db')
         #cursor.execute('UPDATE grafo SET label = ?, conexiones = ?, tipo_relacion = ? WHERE temas = ?', params)
@@ -159,3 +166,18 @@ def deleteTopic(tema_eliminar):
     
     con.close()
     return status
+
+
+def getSubjectList():
+    """Obtener la lista de materias."""
+    cursor, con = openDB('db/user.db')
+    #data = [("Fundamentos",), ("CC",), ("CalDif",)]
+    #cursor.executemany('INSERT INTO materias (materia) VALUES (?)', data)
+    #con.commit()
+    search = cursor.execute("SELECT materia FROM materias")
+    materias = [row[0] for row in search.fetchall()]
+    con.close()
+
+    return materias
+
+

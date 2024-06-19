@@ -1,4 +1,6 @@
-from customtkinter import CTk, CTkFrame, CTkButton, CTkLabel, CTkOptionMenu, CTkEntry, CTkInputDialog, CTkTextbox, CTkSlider
+from customtkinter import CTk, CTkToplevel, CTkTabview, CTkFrame, CTkButton, CTkLabel, CTkOptionMenu, CTkEntry, CTkInputDialog, CTkTextbox, CTkSlider
+import tkinter as tk
+from json_db import change_db, read_db
 import tkinter as tk
 from ddbb import getTopicList, addTopic, checkTopic, deleteTopic, updateTopic, addIdea, openDB, addIdeaRelevance
 #from modules.functions import db_total_rel_topics, update_root_screen, relevance_status, db_topics, db_total_topics
@@ -42,7 +44,7 @@ def relevance_up_to_date():
         return False
 
 
-class ManageWindow(CTkFrame):
+#class ManageWindow(CTkFrame):
     """Página con gestión de temas."""
 
     def __init__(self, master):
@@ -350,3 +352,82 @@ tipo de relevancia es para cada tema.
         elif TOTAL_REL_TOPIC_COUNT < 5:
             self.start_relevance_btn.configure(state='disabled', require_redraw=True)
     """
+
+
+class MessageError(tk.Toplevel):
+    def __init__(self, master):
+        super().__init__(master)
+        self.title("Subject Limit Reached")
+        self.geometry("400x100")
+
+        label = CTkLabel(self, text="No se pueden añadir más de 6 materias o campo incompleto!")
+        label.pack(pady=20)
+
+        button = CTkButton(self, text="OK", command=self.destroy)
+        button.pack(pady=10)
+
+
+class ManageWindow(CTkFrame):
+    def __init__(self, master):
+            super().__init__(master)
+
+            #? Agregar materias
+            self.grid_rowconfigure((0,1,2,3), weight=1, uniform='a')
+            self.grid_columnconfigure(0, weight=1, uniform='a')
+            self.subject_tabview = CTkTabview(self)
+            self.subject_tabview.grid(row=0, column=0, rowspan=3, sticky='news')
+            self.subject_add = CTkFrame(self, fg_color='yellow')
+            self.addTabs()
+            self.subject_add.grid(row=3, column=0, sticky='news')
+            self.subject_add.grid_rowconfigure((0,1,2), weight=1, uniform='a')
+            self.subject_add.grid_columnconfigure((0,1,2,3), weight=1, uniform='a')
+
+            CTkLabel(self.subject_add, text='Lista de Materias').grid(row=0, column=0, sticky='news')
+            CTkButton(self.subject_add, text='Añadir materia', command=self.addSubject).grid(row=1, column=0)
+            self.subject_entry = CTkEntry(self.subject_add)
+            self.subject_entry.grid(row=2, column=0)
+            CTkTextbox(self.subject_add).grid(column=1, columnspan=3, row=1, rowspan=2, sticky='news')
+
+
+    
+
+
+    def addTabs(self):
+        """Tabs for each subject and their main widgets."""
+
+        db = read_db()
+        for subject_name in db["subjects"].keys():
+            self.subject_tabview.add(subject_name)
+            tab_frame = self.subject_tabview.tab(subject_name)
+            tab_frame.grid_columnconfigure((0,1,2), weight=1, uniform='a')
+            tab_frame.grid_rowconfigure((0,1,2), weight=1, uniform='a')
+
+            subject_title = CTkLabel(tab_frame, text=f"Lista de Temas")
+            subject_list = CTkTextbox(tab_frame)
+
+            subject_title.grid(row=0, column=1)
+            subject_list.grid(row=1, column=0, rowspan=2, sticky='news', pady=20, padx=8)
+
+
+    def addSubject(self):
+        """Add the subject to the JSON file."""
+
+        subject = self.subject_entry.get()
+        db = read_db()
+        total_subjects = len(db["subjects"])
+        
+        if subject not in [' ', ''] and total_subjects < 6:
+            db["subjects"][subject] = []
+            change_db(db)
+            self.subject_tabview.add(subject)
+            self.subject_tabview.set(subject)
+        else:
+            MessageError(self)
+        self.subject_entry.delete(0, tk.END)
+
+
+    def updateSubject(self):
+        """Update the subject on the JSON file."""
+
+    def deleteSubject(self):
+        """Delete the subject on the JSON file and the tabview."""
