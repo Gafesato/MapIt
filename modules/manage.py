@@ -355,16 +355,30 @@ tipo de relevancia es para cada tema.
 
 
 class MessageError(tk.Toplevel):
-    def __init__(self, master):
+    def __init__(self, master, message):
         super().__init__(master)
         self.title("Subject Limit Reached")
         self.geometry("400x100")
 
-        label = CTkLabel(self, text="No se pueden añadir más de 6 materias o campo incompleto!")
+        label = CTkLabel(self, text=message)
         label.pack(pady=20)
 
         button = CTkButton(self, text="OK", command=self.destroy)
         button.pack(pady=10)
+
+
+class MyTabView(CTkTabview):
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
+
+        # create tabs
+        self.add("tab 1")
+        self.add("tab 2")
+
+        # add widgets on tabs
+        self.label = CTkLabel(master=self.tab("tab 1"))
+        self.label.grid(row=0, column=0, padx=20, pady=10)
+
 
 
 class ManageWindow(CTkFrame):
@@ -374,22 +388,43 @@ class ManageWindow(CTkFrame):
             #? Agregar materias
             self.grid_rowconfigure((0,1,2,3), weight=1, uniform='a')
             self.grid_columnconfigure(0, weight=1, uniform='a')
+            
             self.subject_tabview = CTkTabview(self)
             self.subject_tabview.grid(row=0, column=0, rowspan=3, sticky='news')
-            self.subject_add = CTkFrame(self, fg_color='yellow')
+            self.subject_tabview.add('General')
+            self.subject_tabview.set('General')
+
+            self.home_view = self.subject_tabview.tab('General')
+            self.home_view.grid_columnconfigure((0,1,2), weight=1)
+            self.home_view.grid_rowconfigure((0,1,2), weight=1)
+
             self.addTabs()
-            self.subject_add.grid(row=3, column=0, sticky='news')
-            self.subject_add.grid_rowconfigure((0,1,2), weight=1, uniform='a')
-            self.subject_add.grid_columnconfigure((0,1,2,3), weight=1, uniform='a')
 
-            CTkLabel(self.subject_add, text='Lista de Materias').grid(row=0, column=0, sticky='news')
-            CTkButton(self.subject_add, text='Añadir materia', command=self.addSubject).grid(row=1, column=0)
-            self.subject_entry = CTkEntry(self.subject_add)
-            self.subject_entry.grid(row=2, column=0)
-            CTkTextbox(self.subject_add).grid(column=1, columnspan=3, row=1, rowspan=2, sticky='news')
+            CTkLabel(self.home_view, text='Lista de Materias').grid(row=0, column=0, sticky='news')
+            CTkButton(self.home_view, text='Añadir materia', command=self.addSubject).grid(row=1, column=0)
+            self.subject_entry = CTkEntry(self.home_view)
+            self.subject_entry.grid(row=1, column=1)
+            CTkTextbox(self.home_view).grid(column=0, row=2, sticky='news')
 
 
-    
+
+    def addSubject(self):
+        """Add the subject to the JSON file."""
+
+        subject = self.subject_entry.get()
+        db = read_db()
+        total_subjects = len(db["subjects"])
+        if subject in db["subjects"].keys():
+            MessageError(self, f"La materia {subject} ya existe!")
+        elif subject not in [' ', ''] and total_subjects < 6:
+            db["subjects"][subject] = []
+            change_db(db)
+            self.subject_tabview.add(subject)
+            new = self.subject_tabview.tab(subject)
+            CTkLabel(new, text='Presione la ventana Gestionar Temas para recargar!').pack()
+        else:
+            MessageError(self, "No se pueden añadir más de 6 materias o campo incompleto!")
+        self.subject_entry.delete(0, tk.END)
 
 
     def addTabs(self):
@@ -408,26 +443,40 @@ class ManageWindow(CTkFrame):
             subject_title.grid(row=0, column=1)
             subject_list.grid(row=1, column=0, rowspan=2, sticky='news', pady=20, padx=8)
 
+            self.update_button = CTkButton(tab_frame, text='Actualizar tema', command=self.updateTopic)
+            self.update_button.grid(row=2, column=1)
 
-    def addSubject(self):
-        """Add the subject to the JSON file."""
+            self.delete_button = CTkButton(tab_frame, text='Eliminar tema', command=self.deleteTopic)
+            self.delete_button.grid(row=2, column=2)
 
-        subject = self.subject_entry.get()
+
+    def updateTopic(self):
+        """Update a topic in the JSON file."""
+
+        dialog = CTkInputDialog(text="Ingresar nombre nuevo del tema: ", title="Editar")
+        new = dialog.get_input()
+        subject_name = self.subject_tabview.get()
         db = read_db()
-        total_subjects = len(db["subjects"])
-        
-        if subject not in [' ', ''] and total_subjects < 6:
-            db["subjects"][subject] = []
-            change_db(db)
-            self.subject_tabview.add(subject)
-            self.subject_tabview.set(subject)
+        if new not in db["subjects"].keys() and new not in [' ', '']:
+            if subject_name in db["subjects"]:
+                db["subjects"][new] = db["subjects"].pop(subject_name)
+                change_db(db)
+                self.subject_tabview.rename(subject_name, new)
+                self.subject_tabview.set(new)
         else:
-            MessageError(self)
-        self.subject_entry.delete(0, tk.END)
+            MessageError(self, f"La materia {new} ya existe o error!")
 
 
-    def updateSubject(self):
-        """Update the subject on the JSON file."""
+    def deleteTopic(self):
+        """Delete a topic from the JSON file and the tabview."""
 
-    def deleteSubject(self):
-        """Delete the subject on the JSON file and the tabview."""
+        db = read_db()
+        subject_name = self.subject_tabview.get()
+        if subject_name in db["subjects"]:
+            del db["subjects"][subject_name]
+            change_db(db)
+            self.subject_tabview.delete(subject_name)
+            self.subject_tabview.set('General')
+
+
+

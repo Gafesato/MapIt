@@ -13,12 +13,19 @@
             "email": "jane@example.com"
         }
     ],
-    "subjects": {
-        "Fundamentos": [],
-        "Calculo": [],
-        "Trading": [],
-        "CC": [],
-        "Productividad": [],
-        "Familia": []
+    "subjects": {},
+    "subjects-relations": {
+        "Importancia": [
+            "relevante",
+            "relevante",
+            "detalle",
+            "relevante",
+            "media",
+            "relevante",
+            "relevante"
+        ],
+        "Ideas": {
+            "Fundamentos": {}
+        }
     }
 }
