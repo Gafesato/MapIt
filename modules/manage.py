@@ -1,357 +1,12 @@
 from customtkinter import CTk, CTkToplevel, CTkTabview, CTkFrame, CTkButton, CTkLabel, CTkOptionMenu, CTkEntry, CTkInputDialog, CTkTextbox, CTkSlider
 import tkinter as tk
+from tkinter import ttk
 from json_db import change_db, read_db
-import tkinter as tk
 from ddbb import getTopicList, addTopic, checkTopic, deleteTopic, updateTopic, addIdea, openDB, addIdeaRelevance
-#from modules.functions import db_total_rel_topics, update_root_screen, relevance_status, db_topics, db_total_topics
 
-db_topics, db_total_topics = None, None
-db_total_rel_topics = int
-
-relevance_status = False
 
 color = ('#11001C', '#F6C0D0')
 color2 = ('#fff', '#11001C')
-
-def update_root_screen(process=1, relevance_status=False):
-    global db_topics
-    global db_total_topics
-    global db_total_rel_topics
-
-    try:
-        db_topics, db_total_topics, _ = getTopicList()
-    except ValueError:
-        return False
-    if process == 1:
-        try:
-            if db_total_topics > 5:
-                db_total_rel_topics = 6
-            else:
-                db_total_rel_topics = db_total_topics
-        except TypeError:
-            pass
-    
-    
-def relevance_up_to_date():
-    # Especificar relevancia al día
-    try:
-        cursor, con = openDB('db/user.db')
-        cursor.execute('UPDATE user_info SET relevancia = ? WHERE id = ?', (relevance_status, 1,))
-        con.commit()
-        con.close()
-        return True
-    except Exception:
-        return False
-
-
-#class ManageWindow(CTkFrame):
-    """Página con gestión de temas."""
-
-    def __init__(self, master):
-        super().__init__(master)
-
-        #! Contenedores de main
-        self.grid_columnconfigure((0,1), weight=1, uniform='a')
-        self.grid_rowconfigure(0, weight=1, uniform='a')
-
-        self.topics_cont = CTkFrame(self, corner_radius=0)
-        self.topics_cont.grid(row=0, column=0, sticky='news')
-        self.topics_cont.grid_columnconfigure((0,1,2,3), weight=1, uniform = 'a')
-        self.topics_cont.grid_rowconfigure((0,1,2,3,4,5,6,7), weight=1, uniform = 'a')
-
-
-        self.info_cont = CTkFrame(self, corner_radius=0)
-        self.info_cont.grid(row=0, column=1, sticky='news')
-        self.info_cont.grid_columnconfigure((0,1), weight=1, uniform = 'a')
-        self.info_cont.grid_rowconfigure((0,1,2,3,4,5,6,7), weight=1, uniform = 'a')
-        
-
-        #! Lado izquierdo
-        topic_title = CTkLabel(self.topics_cont, text="Lista de Temas: ", fg_color='#191919', text_color='#fff')
-        self.topic_list = tk.Listbox(self.topics_cont, borderwidth=0, activestyle=tk.DOTBOX, selectborderwidth=2,
-                                     selectbackground='#191919', selectforeground='#fff')
-        self.topic_add_entry = CTkEntry(self.topics_cont)
-        topic_add_btn = CTkButton(self.topics_cont, text='+', font=('Arial', 30), command=self.topic_add_funct)
-        topic_detele_btn = CTkButton(self.topics_cont, text='-', font=('Arial', 30), command=self.topic_delete_funct)
-        self.status_message = CTkLabel(self.topics_cont, text='Status Operaciones', 
-                                       fg_color='#191919', text_color='#fff')
-
-        #? Posición lado izquierdo
-        topic_title.grid(row=0, column=0, columnspan=4, sticky='news')
-
-        self.topic_list.grid(row=1, rowspan=3, column=0, columnspan=4, padx=20, sticky='news')
-        self.topic_list.bind("<Double-1>", lambda event: self.topic_update_funct(self))
-
-        topic_add_btn.grid(row=4, column=0, sticky='news', padx=10, pady=(10,5))
-        self.topic_add_entry.grid(row=4, column=1, sticky='news', pady=10, padx=(0, 10), columnspan=3)
-        topic_detele_btn.grid(row=5, column=0, sticky='news', padx=10, pady=(5,10))
-        self.status_message.grid(row=7, column=0, columnspan=4, sticky='news')
-
-
-        #! Lado derecho
-        self.introduction_message = CTkLabel(self.info_cont, text='''
-1. Tras una clase, agregue 
-todos los temas nuevos aprendidos.
-                                             
-2. Seleccione cuáles son relevantes y 
-cuáles son detalles.
-                                             
-3. Agregue oraciones que describan 
-el nuevo tema.
-                                             
-4. Agregue, elimine o edite temas de 
-acuerdo a su preferencia.
-                                             
-5. Si existen más de 10 temas, 
-se recomienda RELACIONAR los temas.
-                                             
-''')
-        self.start_relevance_btn = CTkButton(self.info_cont, text='Empezar relevancia', text_color=color, fg_color=color2,
-                                             state='disabled', corner_radius=20, command=lambda: self.add_relevance_funct(delete_flag=True))
-        self.introduction_message2 = CTkLabel(self.info_cont, text='''
-1. Deben haber más de 5 temas para 
-que el botón se habilite.
-                                              
-2. Proceda a agregar la idea y qué 
-tipo de relevancia es para cada tema.
-''')
-        
-        #? Posición lado derecho
-        self.introduction_message.grid(row=0, column=0, columnspan=2, rowspan=4, sticky='news')
-        self.start_relevance_btn.grid(row=4, column=0, columnspan=2, sticky='news', pady=10, padx=40)
-        self.introduction_message2.grid(row=5, column=0, columnspan=2, rowspan=2, sticky='news')
-
-    
-
-        #! LADO DERECHO: Elementos del paso 2
-        update_root_screen()
-        self.start_relevance_title = CTkLabel(self.info_cont, text=f'Total de temas: {db_total_topics}')
-        self.start_relevance_count = CTkLabel(self.info_cont, text=f'Quedan {db_total_rel_topics} temas relevantes')
-        self.start_option_title = CTkLabel(self.info_cont, text='', wraplength=150)
-        self.start_option_menu = CTkOptionMenu(self.info_cont, corner_radius=20,
-                            values=['relevante','detalle'], anchor='center')
-        self.start_option_menu.set('')
-        self.start_idea_entry = CTkTextbox(self.info_cont, corner_radius=20, fg_color=color2)
-        self.start_send_info = CTkButton(self.info_cont, text='Enviar Información', command=self.relevance_send_funct)
-        
-        self.topic_setup(update_flag=True)
-        self.rel_topic_iterator = 0
-        self.rel_topic_decrement_iterator = 1
-        
-        #self.add_idea_message = CTkLabel(self.topics_cont, text='Presione enter para guardar la idea | Edite sobre el texto para guardar', wraplength=150)
-        #delete_funct = lambda: self.topic_detele_funct(self.topic_delete_entry, self.topic_list, self.status_message)
-
-        
-
-    def add_relevance_funct(self, delete_flag=False, delete_flag2=False):
-        """Itera sobre los temas que no tienen relevancia y pregunta sobre ellos."""
-
-        # Eliminar los elementos del paso 1 del lado derecho y crea los del segundo paso
-        if delete_flag:
-            self.start_relevance_btn.grid_remove()
-            self.introduction_message.grid_remove()
-            self.introduction_message2.grid_remove()
-
-            self.start_relevance_title.grid(row=0, column=0, columnspan=2,sticky='news')
-            self.start_relevance_count.grid(row=1, column=0, columnspan=2,sticky='news')
-            self.start_option_title.grid(row=2, column=0, sticky='news')
-            self.start_option_menu.grid(row=2, column=1, sticky='we')
-            self.start_idea_entry.grid(row=3, rowspan=3, column=0, columnspan=2, sticky='news')
-            self.start_send_info.grid(row=6, column=0, columnspan=2, sticky='news')
-
-            self.relevance_send_funct(first=True)
-        
-            # Aquí llamar a la función que destruye todos
-            # Tener desactivado el botón hasta que se agreguen 3 temás más
-            # Repetir el proceso
-        if delete_flag2:
-            self.introduction_message.grid(row=0, column=0, columnspan=2, rowspan=4, sticky='news')
-            self.start_relevance_btn.grid(row=4, column=0, columnspan=2, sticky='news', pady=10, padx=40)
-            self.introduction_message2.grid(row=5, column=0, columnspan=2, rowspan=2, sticky='news')
-            self.start_relevance_title.grid_remove()
-            self.start_relevance_count.grid_remove()
-            self.start_option_title.grid_remove()
-            self.start_option_menu.grid_remove()
-            self.start_idea_entry.grid_remove()
-            self.start_send_info.grid_remove()
-            self.start_send_info.grid_remove()
-
-
-    def relevance_send_funct(self, first=False):
-        """Verifica que todos los campos de start relevance estén y agrega a la DB."""
-
-        global db_total_rel_topics
-        # Actualizar el tema a preguntar por la relevancia
-
-
-        if self.rel_topic_iterator < db_total_topics:
-
-            update_root_screen()
-            topic = db_topics[self.rel_topic_iterator]
-            self.start_option_title.configure(text = f'Escoger la relevancia para el tema {topic}')
-            self.start_relevance_count.configure(text=f'Quedan {db_total_rel_topics-self.rel_topic_decrement_iterator} temas relevantes')
-            self.start_relevance_title.configure(text=f'Total de temas: {db_total_topics}')
-
-            option_entry = self.start_option_menu.get()
-            idea_entry = self.start_idea_entry.get('0.0', 'end')
-
-            check_relevant_flag = False
-            if option_entry and len(idea_entry) >= 5:
-                if option_entry == 'relevante' and self.rel_topic_decrement_iterator < db_total_rel_topics:
-                    print(f'TOTAL DB REL TOPICS {db_total_rel_topics}')
-                    self.rel_topic_decrement_iterator += 1
-                    check_relevant_flag = True
-                elif option_entry == 'relevante' and self.rel_topic_decrement_iterator == db_total_rel_topics:
-                    self.status_message.configure(text='No quedan temas relevantes!')
-
-                if option_entry == 'detalle' or check_relevant_flag:
-                    addIdea(topic=(db_topics[self.rel_topic_iterator]), 
-                            relevance=option_entry, idea=idea_entry)
-                    self.status_message.configure(text='Añadida la idea y la relevancia con éxito!')
-
-                
-                self.start_option_menu.set('')
-                self.start_idea_entry.delete('0.0', 'end')
-                self.rel_topic_iterator += 1
-                self.after(1500, self.relevance_send_funct())
-            else:
-                if first:
-                    self.status_message.configure(text='Agregue las ideas y la relevancia!')
-                else:
-                    self.status_message.configure(text='Faltan algún o ambos de los campos!')
-
-        else:
-            # Volver al paso 1
-            self.status_message.configure(text='Ha terminado de agregar las ideas y la relevancia!')
-            update_root_screen(relevance_status=True)
-            #self.topic_setup()
-            self.rel_topic_iterator = 0
-            self.rel_topic_decrement_iterator = 0
-            self.after(3000, lambda: self.add_relevance_funct(delete_flag2=True))
-
-
-    def topic_setup(self, update_flag=False):
-        """Agrega los temas de la db al listbox y configura el botón de relevancia."""
-
-        if update_flag == True:
-            if db_topics != None:
-                for topic in db_topics:
-                    self.topic_list.insert(tk.END, topic)
-            elif db_topics == None:
-                self.status_message.configure(text="STATUS --> No hay Temas")
-
-        if db_total_topics != None:
-            if db_total_topics >= 5 and relevance_status == False:
-                if self.start_relevance_btn.cget('state') == 'disabled':
-                    self.start_relevance_btn.configure(state='normal')
-            elif relevance_status:
-                # Si se está al día con la relevancia, se desactiva el botón
-                self.start_relevance_btn.configure(state='disabled')
-            else:
-                # Con que un solo widget exista, los cierra todos
-                if self.start_idea_entry.winfo_exists():
-                    self.status_message.configure(text='Ahora tiene menos de 5 temas!')
-                    self.add_relevance_funct(delete_flag2=True)
-
-                self.start_relevance_btn.configure(state='disabled')
-
-
-    def topic_add_funct(self, control_relevance_flag=False):
-        """Añade al listbox y a la db el tema."""
-
-        #create_idea = False
-        topic_new = self.topic_add_entry.get()
-        if checkTopic(topic_new):
-            s = f'El tema {topic_new} ya existe.'
-        elif topic_new:
-            s = 'Error al añadir en la base de datos.'
-            if addTopic(topic_new):
-                # Modificar Tkinter
-                self.topic_list.insert(tk.END, topic_new)
-                self.topic_add_entry.delete(0, tk.END)
-                s = f'{topic_new} agregado con éxito.'
-
-                # Se indica que es falso porque se ha añadido un nuevo tema, 
-                # por lo que se activa el botón de relacionar
-                update_root_screen(relevance_status=False)
-                self.start_relevance_title.configure(text=f'Total de temas: {db_total_topics}')
-                self.start_relevance_count.configure(text=f'Quedan {db_total_rel_topics} temas relevantes')
-                self.topic_setup()
-                
-                #create_idea = True
-                #self.after(1, self.get_topic_count())
-        else:
-            s = 'Error al añadir.'
-
-        self.status_message.configure(text=s)
-
-
-    def topic_delete_funct(self):
-        """Elimina del listbox y la db el tema."""
-
-        try:
-            topic_pos = self.topic_list.curselection()[0]
-            topic_to_delete = self.topic_list.get(topic_pos)
-            if deleteTopic(topic_to_delete):
-                self.topic_list.delete(topic_pos)
-                s = f"{topic_to_delete} eliminado con éxito."
-                update_root_screen()
-                self.start_relevance_title.configure(text=f'Total de temas: {db_total_topics}')
-                self.start_relevance_count.configure(text=f'Quedan {db_total_rel_topics} temas relevantes')
-                self.topic_setup()
-                topic = db_topics[self.rel_topic_iterator]
-                self.start_option_title.configure(text = f'Escoger la relevancia para el tema {topic}')
-        except IndexError:
-            s = "Seleccione un tema para eliminar!"
-        self.status_message.configure(text=s)
-
-
-    def topic_update_funct(event, self):
-        """Actualiza el tema al dar doble click sobre él."""
-
-        try:
-            topic_pos = self.topic_list.curselection()[0]
-            topic_before = self.topic_list.get(topic_pos)
-            dialog = CTkInputDialog(text=f'Cambiando {topic_before} por:', title=f'Editando...')
-
-            topic_update = dialog.get_input()
-            if checkTopic(topic_update):
-                s = f'El tema {topic_update} ya existe.'
-            elif topic_update:
-                updateTopic(topic_before, topic_update)
-                s = f"|{topic_before}| se actualizó por |{topic_update}| con éxito."
-                # Editar Tkinter
-                self.topic_list.delete(topic_pos)
-                self.topic_list.insert(topic_pos, topic_update)
-            else:
-                s = 'Error al actualizar.'
-        except IndexError:
-            s = 'Agregue un tema!'
-
-        self.status_message.configure(text=s)
-
-    """
-    def get_topic_count(self, update_flag=False):
-        ""Actualiza el root y la cuenta sobre el total de temas.""
-
-        get_const()
-        
-        # Actualiza el total de temas en el paso 2
-        self.start_relevance_title.configure(text=f'Total de temas: {db_total_topics}')
-        self.start_relevance_count.configure(text=f'Quedan {TOTAL_REL_TOPIC_COUNT} temas relevantes')
-
-
-        if self.db_topics[0] != None and update_flag:
-            for topic in self.db_topics[0]:
-                self.topic_list.insert(tk.END, topic)
-        elif self.db_topics[0] == None and update_flag:
-            self.status_message.configure(text="STATUS --> No hay Temas")
-
-        if db_total_topics >= 5:
-            self.start_relevance_btn.configure(state='normal', require_redraw=True)
-        elif TOTAL_REL_TOPIC_COUNT < 5:
-            self.start_relevance_btn.configure(state='disabled', require_redraw=True)
-    """
 
 
 class MessageError(tk.Toplevel):
@@ -367,17 +22,115 @@ class MessageError(tk.Toplevel):
         button.pack(pady=10)
 
 
-class MyTabView(CTkTabview):
-    def __init__(self, master, **kwargs):
-        super().__init__(master, **kwargs)
 
-        # create tabs
-        self.add("tab 1")
-        self.add("tab 2")
+class Subject:
+    def __init__(self, parent, tab_name, tab_view):
+        self.parent = parent
+        self.tab_name = tab_name
+        self.subject_tabview = tab_view
 
-        # add widgets on tabs
-        self.label = CTkLabel(master=self.tab("tab 1"))
-        self.label.grid(row=0, column=0, padx=20, pady=10)
+            
+        self.parent.grid_columnconfigure((0,1,2), weight=1, uniform='a')
+        self.parent.grid_rowconfigure((0,1,2,3,4,5), weight=1, uniform='a')
+
+        subject_title = CTkLabel(self.parent, text=f"Lista de Temas")
+        subject_title.grid(row=0, column=0)
+
+        self.update_button = CTkButton(self.parent, text='Actualizar tema', command=self.updateSubject)
+        self.update_button.grid(row=0, column=1)
+
+        self.delete_button = CTkButton(self.parent, text='Eliminar tema', command=self.deleteSubject)
+        self.delete_button.grid(row=0, column=2)
+
+        # Funcionalidad de añadir temas
+        self.topic_entry = CTkEntry(self.parent)
+        self.topic_entry.grid(row=3, column=0)
+        self.topic_add_btn = CTkButton(self.parent)
+        self.topic_add_btn.grid(row=3, column=1)
+
+        # Create a table in the tab
+        self.tree = ttk.Treeview(self.parent)
+
+        # Define the columns
+        column1, column2, column3 = "Tema", "Idea", "Importancia"
+        self.tree["columns"] = (column1, column2, column3, "delete")
+
+        # Format the columns
+        self.tree.column("#0", width=0, stretch=tk.NO)  # The ghost column, not used
+        self.tree.column(column1, anchor=tk.W, width=100)
+        self.tree.column(column2, anchor=tk.W, width=100)
+        self.tree.column(column3, anchor=tk.W, width=100)
+        self.tree.column("delete", anchor=tk.CENTER, width=70)
+
+        # Create the column headings
+        self.tree.heading("#0", text="", anchor=tk.W)
+        self.tree.heading(column1, text=column1, anchor=tk.W)
+        self.tree.heading(column2, text=column2, anchor=tk.W)
+        self.tree.heading(column3, text=column3, anchor=tk.W)
+        self.tree.heading("delete", text="Delete")
+
+
+        # Add a scrollbar
+        scrollbar = ttk.Scrollbar(self.parent, orient=tk.VERTICAL, command=self.tree.yview)
+        self.tree.configure(yscroll=scrollbar.set)
+
+        # Position the table and scrollbar in the window
+        self.tree.grid(row=1, column=0, rowspan=3, columnspan=2, sticky='nsew')
+        scrollbar.grid(row=4, column=2, rowspan=2, sticky='ns')
+
+        # Add data to the table
+        self.data = [
+            ("Row 1", "Data 1-1", "Data 1-2", "Data 1-3"),
+            ("Row 2", "Data 2-1", "Data 2-2", "Data 2-3"),
+            ("Row 3", "Data 3-1", "Data 3-2", "Data 3-3")
+        ]
+        
+        i = 0
+        for row in self.data:
+            self.tree.insert("", tk.END, iid=row[0], values=row[1:] + (self.create_delete_button(str(i))))
+            i += 1
+
+
+    def create_delete_button(self, iid):
+        # Create a button for deleting a row
+        button = CTkButton(self.parent, text="Delete", command=lambda: self.delete_row(iid))
+        return button
+
+    def delete_row(self, iid):
+        self.tree.delete(iid)
+
+    def createTopic(self):
+        """Add the topic tot the table and to JSON file."""
+
+
+    def updateSubject(self):
+        """Update a topic in the JSON file."""
+
+        dialog = CTkInputDialog(text="Ingresar nombre nuevo del tema: ", title="Editar")
+        new = dialog.get_input()
+        subject_name = self.subject_tabview.get()
+        db = read_db()
+        if new not in db["subjects"].keys() and new not in [' ', '']:
+            if subject_name in db["subjects"]:
+                db["subjects"][new] = db["subjects"].pop(subject_name)
+                change_db(db)
+                self.subject_tabview.rename(subject_name, new)
+                self.subject_tabview.set(new)
+        else:
+            MessageError(self, f"La materia {new} ya existe o error!")
+
+
+    def deleteSubject(self):
+        """Delete a topic from the JSON file and the tabview."""
+
+        db = read_db()
+        subject_name = self.subject_tabview.get()
+        if subject_name in db["subjects"]:
+            del db["subjects"][subject_name]
+            change_db(db)
+            self.subject_tabview.delete(subject_name)
+            self.subject_tabview.set('General')
+
 
 
 
@@ -394,11 +147,15 @@ class ManageWindow(CTkFrame):
             self.subject_tabview.add('General')
             self.subject_tabview.set('General')
 
+            # Add the existent subjects as Tabs
+            db = read_db()
+            for subject_name in db["subjects"].keys():
+                self.subject_tabview.add(subject_name)
+                Subject(self.subject_tabview.tab(subject_name), subject_name, self.subject_tabview)
+
             self.home_view = self.subject_tabview.tab('General')
             self.home_view.grid_columnconfigure((0,1,2), weight=1)
             self.home_view.grid_rowconfigure((0,1,2), weight=1)
-
-            self.addTabs()
 
             CTkLabel(self.home_view, text='Lista de Materias').grid(row=0, column=0, sticky='news')
             CTkButton(self.home_view, text='Añadir materia', command=self.addSubject).grid(row=1, column=0)
@@ -420,63 +177,12 @@ class ManageWindow(CTkFrame):
             db["subjects"][subject] = []
             change_db(db)
             self.subject_tabview.add(subject)
-            new = self.subject_tabview.tab(subject)
-            CTkLabel(new, text='Presione la ventana Gestionar Temas para recargar!').pack()
+            Subject(self.subject_tabview.tab(subject), subject, self.subject_tabview)
         else:
             MessageError(self, "No se pueden añadir más de 6 materias o campo incompleto!")
         self.subject_entry.delete(0, tk.END)
 
 
-    def addTabs(self):
-        """Tabs for each subject and their main widgets."""
-
-        db = read_db()
-        for subject_name in db["subjects"].keys():
-            self.subject_tabview.add(subject_name)
-            tab_frame = self.subject_tabview.tab(subject_name)
-            tab_frame.grid_columnconfigure((0,1,2), weight=1, uniform='a')
-            tab_frame.grid_rowconfigure((0,1,2), weight=1, uniform='a')
-
-            subject_title = CTkLabel(tab_frame, text=f"Lista de Temas")
-            subject_list = CTkTextbox(tab_frame)
-
-            subject_title.grid(row=0, column=1)
-            subject_list.grid(row=1, column=0, rowspan=2, sticky='news', pady=20, padx=8)
-
-            self.update_button = CTkButton(tab_frame, text='Actualizar tema', command=self.updateTopic)
-            self.update_button.grid(row=2, column=1)
-
-            self.delete_button = CTkButton(tab_frame, text='Eliminar tema', command=self.deleteTopic)
-            self.delete_button.grid(row=2, column=2)
-
-
-    def updateTopic(self):
-        """Update a topic in the JSON file."""
-
-        dialog = CTkInputDialog(text="Ingresar nombre nuevo del tema: ", title="Editar")
-        new = dialog.get_input()
-        subject_name = self.subject_tabview.get()
-        db = read_db()
-        if new not in db["subjects"].keys() and new not in [' ', '']:
-            if subject_name in db["subjects"]:
-                db["subjects"][new] = db["subjects"].pop(subject_name)
-                change_db(db)
-                self.subject_tabview.rename(subject_name, new)
-                self.subject_tabview.set(new)
-        else:
-            MessageError(self, f"La materia {new} ya existe o error!")
-
-
-    def deleteTopic(self):
-        """Delete a topic from the JSON file and the tabview."""
-
-        db = read_db()
-        subject_name = self.subject_tabview.get()
-        if subject_name in db["subjects"]:
-            del db["subjects"][subject_name]
-            change_db(db)
-            self.subject_tabview.delete(subject_name)
-            self.subject_tabview.set('General')
 
 
 

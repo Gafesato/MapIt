@@ -3,7 +3,7 @@ from ddbb import addIdeaRelevance
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import networkx as nx
 import matplotlib.pyplot as plt
-from modules.manage import relevance_up_to_date
+#from modules.manage import relevance_up_to_date
 from ddbb import getTopicList
 
 
@@ -32,15 +32,15 @@ class RelateWindow(CTkFrame):
         self.rel_cont.grid_rowconfigure((0,1,2,3,4,5), weight=1, uniform='a')
         self.rel_cont.grid_columnconfigure((0,1,2,3), weight=1, uniform='a')
         
-        if relevance_up_to_date():
+        #if relevance_up_to_date():
             # Si la relevancia está al día se pueden hacer las conexiones
-            self.main_button.configure(state='normal')
-            self.status_message.configure(text='Está al día. Puede relacionar!')
-            self.main_button.configure(command=lambda: self.create_connections(first=True))
-        else:
+        self.main_button.configure(state='normal')
+        self.status_message.configure(text='Está al día. Puede relacionar!')
+        self.main_button.configure(command=lambda: self.create_connections(first=True))
+        #else:
             # De lo contrario, el botón está desactivado
-            self.main_button.configure(state='disabled')
-            self.status_message.configure(text='Tiene temas por relacionar todavía!')
+            #self.main_button.configure(state='disabled')
+            #self.status_message.configure(text='Tiene temas por relacionar todavía!')
 
         # Obtener la lista de temas que se van a pasar por el proceso del mini grafo
         self.CONTADOR = 0

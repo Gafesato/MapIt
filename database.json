@@ -13,7 +13,9 @@
             "email": "jane@example.com"
         }
     ],
-    "subjects": {},
+    "subjects": {
+        "null": []
+    },
     "subjects-relations": {
         "Importancia": [
             "relevante",

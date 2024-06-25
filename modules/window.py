@@ -73,7 +73,7 @@ class App(CTk):
 
         if option == "main": frame = MainWindow(self)
         if option == 'manage': frame = ManageWindow(self)
-        if option == 'visualize': frame = GraphWindow(self)
-        if option == 'relate': frame = RelateWindow(self)
+        if option == 'visualize': frame = ManageWindow(self)
+        if option == 'relate': frame = ManageWindow(self)
         if option == 'settings': frame = SettingsWindow(self)
         frame.place(relx=0.2, y=0, relwidth=0.8, relheight=1)
