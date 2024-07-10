@@ -9,10 +9,12 @@ color = ('#11001C', '#F6C0D0')
 color2 = ('#fff', '#11001C')
 
 
-class MessageError(tk.Toplevel):
+
+class MessageError(CTkToplevel):
     def __init__(self, master, message):
         super().__init__(master)
-        self.title("Subject Limit Reached")
+        self.state('zoomed')
+        self.title("Ventana informativa")
         self.geometry("400x100")
 
         label = CTkLabel(self, text=message)
@@ -20,7 +22,6 @@ class MessageError(tk.Toplevel):
 
         button = CTkButton(self, text="OK", command=self.destroy)
         button.pack(pady=10)
-
 
 
 class Subject:
@@ -36,7 +37,7 @@ class Subject:
         subject_title = CTkLabel(self.parent, text=f"Lista de Temas")
         subject_title.grid(row=0, column=0)
 
-        self.update_button = CTkButton(self.parent, text='Actualizar tema', command=self.updateSubject)
+        self.update_button = CTkButton(self.parent, text='Actualizar nombre', command=self.updateSubject)
         self.update_button.grid(row=0, column=1)
 
         self.delete_button = CTkButton(self.parent, text='Eliminar tema', command=self.deleteSubject)
@@ -44,30 +45,28 @@ class Subject:
 
         # Funcionalidad de añadir temas
         self.topic_entry = CTkEntry(self.parent)
-        self.topic_entry.grid(row=3, column=0)
-        self.topic_add_btn = CTkButton(self.parent)
-        self.topic_add_btn.grid(row=3, column=1)
+        self.topic_entry.grid(row=5, column=0)
+        self.topic_add_btn = CTkButton(self.parent, text='Añadir Tema', command=self.createTopic)
+        self.topic_add_btn.grid(row=5, column=1)
 
         # Create a table in the tab
         self.tree = ttk.Treeview(self.parent)
 
         # Define the columns
         column1, column2, column3 = "Tema", "Idea", "Importancia"
-        self.tree["columns"] = (column1, column2, column3, "delete")
+        self.tree["columns"] = (column1, column2, column3)
 
         # Format the columns
         self.tree.column("#0", width=0, stretch=tk.NO)  # The ghost column, not used
         self.tree.column(column1, anchor=tk.W, width=100)
         self.tree.column(column2, anchor=tk.W, width=100)
         self.tree.column(column3, anchor=tk.W, width=100)
-        self.tree.column("delete", anchor=tk.CENTER, width=70)
 
         # Create the column headings
         self.tree.heading("#0", text="", anchor=tk.W)
         self.tree.heading(column1, text=column1, anchor=tk.W)
         self.tree.heading(column2, text=column2, anchor=tk.W)
         self.tree.heading(column3, text=column3, anchor=tk.W)
-        self.tree.heading("delete", text="Delete")
 
 
         # Add a scrollbar
@@ -79,28 +78,51 @@ class Subject:
         scrollbar.grid(row=4, column=2, rowspan=2, sticky='ns')
 
         # Add data to the table
-        self.data = [
-            ("Row 1", "Data 1-1", "Data 1-2", "Data 1-3"),
-            ("Row 2", "Data 2-1", "Data 2-2", "Data 2-3"),
-            ("Row 3", "Data 3-1", "Data 3-2", "Data 3-3")
-        ]
-        
-        i = 0
+        self.data = self.get_topics_from_db(self.tab_name)[1]
         for row in self.data:
-            self.tree.insert("", tk.END, iid=row[0], values=row[1:] + (self.create_delete_button(str(i))))
-            i += 1
+            self.tree.insert("", tk.END, values=row)
 
+
+    def get_topics_from_db(self, subject_name):
+        """Get the subject data from the json file. """
+
+        db = read_db()
+        topics = db["subjects"].get(subject_name, [])
+
+        # 0 -> Get the list
+        # 1 -> Insert in the table
+        return [topics, [(topic, "", "") for topic in topics]]
+    
 
     def create_delete_button(self, iid):
         # Create a button for deleting a row
         button = CTkButton(self.parent, text="Delete", command=lambda: self.delete_row(iid))
         return button
 
+
     def delete_row(self, iid):
         self.tree.delete(iid)
 
+
     def createTopic(self):
         """Add the topic tot the table and to JSON file."""
+        entry = self.topic_entry.get()
+        db = read_db()
+
+        if entry in [' ', ''] or len(entry) < 4:
+            MessageError(self.parent, "¡Entrada inválida o muy corta!")
+        else:
+            data = self.get_topics_from_db(self.tab_name)[0]
+            if entry in data:
+                MessageError(self.parent, f"El tema {entry} ya existe!")
+            if entry not in data:
+                # Cambios en JSON
+                db["subjects"][self.tab_name].append(entry)
+                change_db(db)
+
+                # Cambios en la tabla y el Entry
+                self.tree.insert("", tk.END, values=(entry, "", ""))
+                self.topic_entry.delete(0, tk.END)
 
 
     def updateSubject(self):
